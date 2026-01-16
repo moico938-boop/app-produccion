@@ -11,7 +11,7 @@ st.title("📝 Registro en la Nube")
 # --- CONEXIÓN ---
 # Pega aquí el link de tu hoja de Google
 # Asegúrate de que esté como "EDITOR" para "Cualquier persona con el enlace"
-URL_HOJA = "https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?gid=0#gid=0"
+URL_HOJA = "TU_LINK_DE_GOOGLE_SHEETS_AQUI"
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
