@@ -8,7 +8,7 @@ st.set_page_config(page_title="Sistema Producción Pro", layout="wide")
 st.title("🚀 Sistema de Registro de Producción")
 
 # --- PEGA TU LINK AQUÍ ---
-URL_HOJA = "https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?pli=1&gid=0#gid=0"
+URL_HOJA = "https://docs.google.com/spreadsheets/d/1UP2DMl4FtvKRINDWb-Aw-6M2i4svQwrl9T4jG99zFuE/edit?usp=sharing"
 
 # Conexión
 conn = st.connection("gsheets", type=GSheetsConnection)
