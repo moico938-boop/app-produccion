@@ -1,54 +1,50 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from gspread_pandas import Spread, conf
+from streamlit_gsheets import GSheetsConnection
 
-# Configuración
-st.set_page_config(page_title="Sistema Producción Google", layout="centered")
+# 1. Configuración visual
+st.set_page_config(page_title="Registro en la Nube", page_icon="📝")
 
-# --- CONEXIÓN DIRECTA ---
-# Usaremos una forma más robusta de conectar
-def enviar_a_google(df_nuevo):
-    try:
-        # Aquí conectamos usando la URL que pusiste en Secrets
-        url = st.secrets["gsheets"]["spreadsheet"]
-        # Cargamos los datos actuales de la hoja
-        df_actual = pd.read_csv(f"{url}/export?format=csv")
-        # Unimos lo viejo con lo nuevo
-        df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
-        # NOTA: Para escribir usaremos un método más directo
-        st.write("Datos listos para enviar...")
-        return df_final
-    except:
-        return df_nuevo
+st.title("📝 Registro en la Nube")
 
-# --- INTERFAZ ---
-st.title("🚀 Registro de Producción")
+# 2. PEGA TU LINK AQUÍ
+# Recuerda: La hoja debe estar en "Cualquier persona con el enlace" y "EDITOR"
+URL_HOJA = "TU_LINK_DE_GOOGLE_SHEETS_AQUI"
 
+# 3. Conexión a Google Sheets
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# Formulario de entrada
 with st.form("registro"):
-    nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", "JEAN", "JOSE"]) # Edita tus nombres aquí
+    nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", "JEAN", "JOSE"])
     producto = st.text_input("Producto")
-    cantidad = st.number_input("Cantidad", min_value=1)
+    cantidad = st.number_input("Cantidad", min_value=1, step=1)
     enviar = st.form_submit_button("Guardar en Google")
 
 if enviar:
-    nuevo = pd.DataFrame([{
-        "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
-        "Trabajador": nombre,
-        "Producto": producto,
-        "Cantidad": cantidad
-    }])
-    
-    # Aquí es donde ocurre la magia de guardado
-    # Por ahora, para evitar el error de permisos, 
-    # te recomiendo usar el conector oficial de Streamlit así:
-    from streamlit_gsheets import GSheetsConnection
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    
-    try:
-        existente = conn.read()
-        actualizado = pd.concat([existente, nuevo], ignore_index=True)
-        conn.update(data=actualizado)
-        st.success("✅ ¡Guardado con éxito!")
-    except Exception as e:
-        st.error(f"Error de permisos: Asegúrate de que la hoja de Google esté compartida como EDITOR con cualquier persona que tenga el enlace.")
+    if not producto:
+        st.warning("⚠️ Por favor, escribe el nombre del producto.")
+    else:
+        # Creamos la nueva fila
+        nueva_fila = pd.DataFrame([{
+            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "Trabajador": nombre,
+            "Producto": producto,
+            "Cantidad": cantidad
+        }])
+        
+        try:
+            # Leemos lo que ya existe
+            datos_actuales = conn.read(spreadsheet=URL_HOJA)
+            
+            # Sumamos la nueva fila
+            datos_nuevos = pd.concat([datos_actuales, nueva_fila], ignore_index=True)
+            
+            # Lo subimos todo de nuevo
+            conn.update(spreadsheet=URL_HOJA, data=datos_nuevos)
+            
+            st.success(f"✅ ¡Registro de {nombre} guardado correctamente!")
+        except Exception as e:
+            st.error("❌ Error de permisos.")
+            st.info("Asegúrate de que el Excel de Google esté compartido como 'EDITOR' con 'Cualquier persona con el enlace'.")
