@@ -1,74 +1,54 @@
 import streamlit as st
 import pandas as pd
-import os
 from datetime import datetime
-from io import BytesIO
+from gspread_pandas import Spread, conf
 
 # Configuración
-st.set_page_config(page_title="Sistema Pro", layout="centered")
+st.set_page_config(page_title="Sistema Producción Google", layout="centered")
 
-ARCHIVO_TRABAJADORES = "lista_trabajadores.csv"
-ARCHIVO_PRODUCCION = "registro_produccion.csv"
-PASSWORD_ADMIN = "1004"  # <--- CAMBIA TU CONTRASEÑA AQUÍ
+# --- CONEXIÓN DIRECTA ---
+# Usaremos una forma más robusta de conectar
+def enviar_a_google(df_nuevo):
+    try:
+        # Aquí conectamos usando la URL que pusiste en Secrets
+        url = st.secrets["gsheets"]["spreadsheet"]
+        # Cargamos los datos actuales de la hoja
+        df_actual = pd.read_csv(f"{url}/export?format=csv")
+        # Unimos lo viejo con lo nuevo
+        df_final = pd.concat([df_actual, df_nuevo], ignore_index=True)
+        # NOTA: Para escribir usaremos un método más directo
+        st.write("Datos listos para enviar...")
+        return df_final
+    except:
+        return df_nuevo
 
-def cargar_trabajadores():
-    if os.path.isfile(ARCHIVO_TRABAJADORES):
-        df = pd.read_csv(ARCHIVO_TRABAJADORES)
-        return df['Nombre'].tolist()
-    return []
+# --- INTERFAZ ---
+st.title("🚀 Registro de Producción")
 
-# Menú lateral
-st.sidebar.title("Navegación")
-import streamlit as st
-from streamlit_gsheets import GSheetsConnection
-import pandas as pd
-from datetime import datetime
+with st.form("registro"):
+    nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", JEAN", "JOSE"]) # Edita tus nombres aquí
+    producto = st.text_input("Producto")
+    cantidad = st.number_input("Cantidad", min_value=1)
+    enviar = st.form_submit_button("Guardar en Google")
 
-# Configuración de página
-st.set_page_config(page_title="Sistema Seguro Google", layout="centered")
-
-# Conexión con Google Sheets
-conn = st.connection("gsheets", type=GSheetsConnection)
-
-# Cargar datos de trabajadores (los leeremos de una pestaña llamada 'Trabajadores')
-# Nota: Para la primera vez, puedes definirlos manualmente o crear la pestaña
-lista_trabajadores = ["Roger", "Eligio", "Cristian" ] # Puedes editar esto
-
-st.sidebar.title("Menú")
-opcion = st.sidebar.selectbox("Ir a:", ["Registrar Producción", "Admin"])
-
-if opcion == "Registrar Producción":
-    st.title("📝 Registro en la Nube")
+if enviar:
+    nuevo = pd.DataFrame([{
+        "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+        "Trabajador": nombre,
+        "Producto": producto,
+        "Cantidad": cantidad
+    }])
     
-    with st.form("form_google"):
-        nombre = st.selectbox("Tu Nombre", lista_trabajadores)
-        prod = st.text_input("¿Qué hiciste?")
-        cant = st.number_input("Cantidad", min_value=1)
-        btn = st.form_submit_button("Enviar a Google Sheets")
-        
-    if btn:
-        # Crear el nuevo registro
-        nuevo_registro = pd.DataFrame([{
-            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "Trabajador": nombre,
-            "Producto": prod,
-            "Cantidad": cant
-        }])
-        
-        # Leer datos actuales
-        existente = conn.read(ttl=0)
-        
-        # Unir y actualizar
-        actualizado = pd.concat([existente, nuevo_registro], ignore_index=True)
+    # Aquí es donde ocurre la magia de guardado
+    # Por ahora, para evitar el error de permisos, 
+    # te recomiendo usar el conector oficial de Streamlit así:
+    from streamlit_gsheets import GSheetsConnection
+    conn = st.connection("gsheets", type=GSheetsConnection)
+    
+    try:
+        existente = conn.read()
+        actualizado = pd.concat([existente, nuevo], ignore_index=True)
         conn.update(data=actualizado)
-        
-        st.success("✅ ¡Guardado en Google Sheets para siempre!")
-
-elif opcion == "Admin":
-    st.title("🔐 Panel de Control")
-    clave = st.text_input("Contraseña", type="password")
-    
-    if clave == "1004":
-        st.subheader("Datos en tiempo real")
-        datos = conn.read(ttl=0)
-        st.dataframe(datos)
+        st.success("✅ ¡Guardado con éxito!")
+    except Exception as e:
+        st.error(f"Error de permisos: Asegúrate de que la hoja de Google esté compartida como EDITOR con cualquier persona que tenga el enlace.")
