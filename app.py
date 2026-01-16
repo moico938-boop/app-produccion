@@ -3,32 +3,34 @@ import pandas as pd
 from datetime import datetime
 from streamlit_gsheets import GSheetsConnection
 
-# Configuración de la aplicación
-st.set_page_config(page_title="Registro de Producción", layout="centered")
+st.set_page_config(page_title="Sistema Producción", layout="centered")
 
-st.title("📝 Registro de produccion")
+st.title("🚀 Registro de Producción")
 
-# --- CONEXIÓN ---
-# 1. PEGA TU LINK AQUÍ ENTRE LAS COMILLAS
-URL_HOJA = "https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?pli=1&gid=0#gid=0"
+# --- CONFIGURACIÓN DEL LINK ---
+# REEMPLAZA ESTO CON TU LINK REAL
+URL_HOJA = "TU_LINK_DE_GOOGLE_SHEETS_AQUI"
 
+# Verificación de seguridad del link
+if "docs.google.com" not in URL_HOJA:
+    st.error("⚠️ El link de Google Sheets no es válido. Cópialo de la barra de direcciones de tu navegador.")
+    st.stop()
+
+# Conector
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# --- INTERFAZ ---
-with st.form("registro_produccion"):
+with st.form("registro"):
     nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", "JEAN", "JOSE"])
-    producto = st.text_input("Producto")
+    producto = st.text_input("Producto (Nombre)")
     cantidad = st.number_input("Cantidad", min_value=1, step=1)
     enviar = st.form_submit_button("Guardar en Google")
 
 if enviar:
     if not producto:
-        st.warning("⚠️ Por favor, ingresa un producto.")
-    elif URL_HOJA == "https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?pli=1&gid=0#gid=0":
-        st.error("❌ No has pegado el link de Google Sheets en el código.")
+        st.warning("⚠️ Escribe el nombre del producto.")
     else:
-        # Fila nueva a insertar
-        nueva_fila = pd.DataFrame([{
+        # Fila nueva
+        nuevo_registro = pd.DataFrame([{
             "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "Trabajador": nombre,
             "Producto": producto,
@@ -36,13 +38,14 @@ if enviar:
         }])
         
         try:
-            # Leer datos actuales y combinar
-            actual = conn.read(spreadsheet=URL_HOJA)
-            df_final = pd.concat([actual, nueva_fila], ignore_index=True)
+            # Intentar leer y actualizar
+            existente = conn.read(spreadsheet=URL_HOJA)
+            actualizado = pd.concat([existente, nuevo_registro], ignore_index=True)
+            conn.update(spreadsheet=URL_HOJA, data=actualizado)
             
-            # Subir actualización
-            conn.update(spreadsheet=URL_HOJA, data=df_final)
-            st.success(f"✅ ¡Registro guardado para {nombre}!")
+            st.success(f"✅ ¡Guardado! {nombre} registró {cantidad} de {producto}")
             st.balloons()
         except Exception as e:
-            st.error("❌ Error de permisos: Verifica que la hoja sea pública como EDITOR.")
+            st.error("❌ ERROR DE PERMISOS")
+            st.info("Ve a tu Google Sheets -> Compartir -> Cambiar a 'Cualquier persona con el enlace' -> Cambiar a 'EDITOR'.")
+            st.write(f"Detalle técnico: {e}")
