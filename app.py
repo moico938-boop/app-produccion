@@ -3,19 +3,19 @@ import pandas as pd
 from datetime import datetime
 from streamlit_gsheets import GSheetsConnection
 
-# 1. Configuración visual
-st.set_page_config(page_title="Registro en la Nube", page_icon="📝")
+# Configuración de la página
+st.set_page_config(page_title="Registro de Producción", layout="centered")
 
-st.title("📝 https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?gid=0#gid=0")
+st.title("📝 Registro en la Nube")
 
-# 2. PEGA TU LINK AQUÍ
-# Recuerda: La hoja debe estar en "Cualquier persona con el enlace" y "EDITOR"
-URL_HOJA = "TU_LINK_DE_GOOGLE_SHEETS_AQUI"
+# --- CONEXIÓN ---
+# Pega aquí el link de tu hoja de Google
+# Asegúrate de que esté como "EDITOR" para "Cualquier persona con el enlace"
+URL_HOJA = "https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?gid=0#gid=0"
 
-# 3. Conexión a Google Sheets
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-# Formulario de entrada
+# --- FORMULARIO ---
 with st.form("registro"):
     nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", "JEAN", "JOSE"])
     producto = st.text_input("Producto")
@@ -24,10 +24,12 @@ with st.form("registro"):
 
 if enviar:
     if not producto:
-        st.warning("⚠️ Por favor, escribe el nombre del producto.")
+        st.warning("⚠️ Escribe un producto.")
+    elif URL_HOJA == "TU_LINK_DE_GOOGLE_SHEETS_AQUI":
+        st.error("❌ Falta pegar el link de Google Sheets en el código.")
     else:
-        # Creamos la nueva fila
-        nueva_fila = pd.DataFrame([{
+        # Fila nueva
+        nuevo = pd.DataFrame([{
             "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "Trabajador": nombre,
             "Producto": producto,
@@ -35,16 +37,14 @@ if enviar:
         }])
         
         try:
-            # Leemos lo que ya existe
-            datos_actuales = conn.read(spreadsheet=URL_HOJA)
+            # Leer datos actuales
+            existente = conn.read(spreadsheet=URL_HOJA)
             
-            # Sumamos la nueva fila
-            datos_nuevos = pd.concat([datos_actuales, nueva_fila], ignore_index=True)
+            # Unir y actualizar
+            actualizado = pd.concat([existente, nuevo], ignore_index=True)
+            conn.update(spreadsheet=URL_HOJA, data=actualizado)
             
-            # Lo subimos todo de nuevo
-            conn.update(spreadsheet=URL_HOJA, data=datos_nuevos)
-            
-            st.success(f"✅ ¡Registro de {nombre} guardado correctamente!")
+            st.success(f"✅ ¡Guardado con éxito para {nombre}!")
+            st.balloons()
         except Exception as e:
-            st.error("❌ Error de permisos.")
-            st.info("Asegúrate de que el Excel de Google esté compartido como 'EDITOR' con 'Cualquier persona con el enlace'.")
+            st.error(f"Error de permisos: Revisa que la hoja sea pública como EDITOR.")
