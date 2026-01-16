@@ -19,68 +19,56 @@ def cargar_trabajadores():
 
 # Menú lateral
 st.sidebar.title("Navegación")
-menu = st.sidebar.selectbox("Ir a:", ["Registrar Producción", "Admin: Gestión y Reportes"])
+import streamlit as st
+from streamlit_gsheets import GSheetsConnection
+import pandas as pd
+from datetime import datetime
 
-# --- SECCIÓN 1: TRABAJADORES ---
-if menu == "Registrar Producción":
-    st.title("🏗️ Reporte Diario")
-    lista = cargar_trabajadores()
-    
-    if not lista:
-        st.warning("⚠️ No hay trabajadores. Avisa a tu jefe.")
-    else:
-        with st.form("prod", clear_on_submit=True):
-            nombre = st.selectbox("Selecciona tu nombre", lista)
-            producto = st.text_input("Producto/Tarea")
-            cantidad = st.number_input("Cantidad", min_value=1, step=1)
-            if st.form_submit_button("Enviar Reporte"):
-                nuevo = pd.DataFrame({
-                    "Fecha": [datetime.now().strftime("%d/%m/%Y %H:%M")],
-                    "Trabajador": [nombre],
-                    "Producto": [producto],
-                    "Cantidad": [cantidad]
-                })
-                nuevo.to_csv(ARCHIVO_PRODUCCION, mode='a', index=False, header=not os.path.isfile(ARCHIVO_PRODUCCION))
-                st.success(f"✅ ¡Hecho, {nombre}!")
+# Configuración de página
+st.set_page_config(page_title="Sistema Seguro Google", layout="centered")
 
-# --- SECCIÓN 2: ADMIN (CON SEGURIDAD Y EXCEL) ---
-elif menu == "Admin: Gestión y Reportes":
-    st.title("🔐 Panel de Control")
+# Conexión con Google Sheets
+conn = st.connection("gsheets", type=GSheetsConnection)
+
+# Cargar datos de trabajadores (los leeremos de una pestaña llamada 'Trabajadores')
+# Nota: Para la primera vez, puedes definirlos manualmente o crear la pestaña
+lista_trabajadores = ["Juan Perez", "Maria Garcia", "Luis Torres"] # Puedes editar esto
+
+st.sidebar.title("Menú")
+opcion = st.sidebar.selectbox("Ir a:", ["Registrar Producción", "Admin"])
+
+if opcion == "Registrar Producción":
+    st.title("📝 Registro en la Nube")
     
-    # Bloque de seguridad
-    clave = st.text_input("Introduce la contraseña de administrador", type="password")
-    
-    if clave == PASSWORD_ADMIN:
-        st.success("Acceso concedido")
+    with st.form("form_google"):
+        nombre = st.selectbox("Tu Nombre", lista_trabajadores)
+        prod = st.text_input("¿Qué hiciste?")
+        cant = st.number_input("Cantidad", min_value=1)
+        btn = st.form_submit_button("Enviar a Google Sheets")
         
-        # Registro de personal
-        with st.expander("➕ Registrar Nuevo Trabajador"):
-            with st.form("admin_form", clear_on_submit=True):
-                n_nom = st.text_input("Nombre completo")
-                n_dni = st.text_input("DNI")
-                if st.form_submit_button("Guardar"):
-                    pd.DataFrame({"Nombre":[n_nom], "DNI":[n_dni]}).to_csv(ARCHIVO_TRABAJADORES, mode='a', index=False, header=not os.path.isfile(ARCHIVO_TRABAJADORES))
-                    st.rerun()
+    if btn:
+        # Crear el nuevo registro
+        nuevo_registro = pd.DataFrame([{
+            "Fecha": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "Trabajador": nombre,
+            "Producto": prod,
+            "Cantidad": cant
+        }])
+        
+        # Leer datos actuales
+        existente = conn.read(ttl=0)
+        
+        # Unir y actualizar
+        actualizado = pd.concat([existente, nuevo_registro], ignore_index=True)
+        conn.update(data=actualizado)
+        
+        st.success("✅ ¡Guardado en Google Sheets para siempre!")
 
-        st.divider()
-        st.subheader("📊 Historial de Producción")
-
-        if os.path.isfile(ARCHIVO_PRODUCCION):
-            df_final = pd.read_csv(ARCHIVO_PRODUCCION)
-            st.dataframe(df_final)
-
-            # --- BOTÓN PARA DESCARGAR EXCEL ---
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_final.to_excel(writer, index=False, sheet_name='Produccion')
-            
-            st.download_button(
-                label="📥 Descargar todo en Excel",
-                data=output.getvalue(),
-                file_name=f"Produccion_{datetime.now().strftime('%Y-%m-%d')}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        else:
-            st.info("No hay datos de producción todavía.")
-    elif clave != "":
-        st.error("❌ Contraseña incorrecta")
+elif opcion == "Admin":
+    st.title("🔐 Panel de Control")
+    clave = st.text_input("Contraseña", type="password")
+    
+    if clave == "1234":
+        st.subheader("Datos en tiempo real")
+        datos = conn.read(ttl=0)
+        st.dataframe(datos)
