@@ -26,7 +26,7 @@ def enviar_a_google(df_nuevo):
 st.title("🚀 Registro de Producción")
 
 with st.form("registro"):
-    nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", JEAN", "JOSE"]) # Edita tus nombres aquí
+    nombre = st.selectbox("Trabajador", ["ROGER", "ELIGIO", "CRISTIAN", "HENRRY", "JEAN", "JOSE"]) # Edita tus nombres aquí
     producto = st.text_input("Producto")
     cantidad = st.number_input("Cantidad", min_value=1)
     enviar = st.form_submit_button("Guardar en Google")
