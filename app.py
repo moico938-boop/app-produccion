@@ -32,7 +32,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 # Cargar datos de trabajadores (los leeremos de una pestaña llamada 'Trabajadores')
 # Nota: Para la primera vez, puedes definirlos manualmente o crear la pestaña
-lista_trabajadores = ["Juan Perez", "Maria Garcia", "Luis Torres"] # Puedes editar esto
+lista_trabajadores = ["Roger", "Eligio", "Cristian" ] # Puedes editar esto
 
 st.sidebar.title("Menú")
 opcion = st.sidebar.selectbox("Ir a:", ["Registrar Producción", "Admin"])
@@ -68,7 +68,7 @@ elif opcion == "Admin":
     st.title("🔐 Panel de Control")
     clave = st.text_input("Contraseña", type="password")
     
-    if clave == "1234":
+    if clave == "1004":
         st.subheader("Datos en tiempo real")
         datos = conn.read(ttl=0)
         st.dataframe(datos)
