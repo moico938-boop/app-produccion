@@ -6,7 +6,7 @@ from streamlit_gsheets import GSheetsConnection
 # 1. Configuración visual
 st.set_page_config(page_title="Registro en la Nube", page_icon="📝")
 
-st.title("📝 Registro en la Nube")
+st.title("📝 https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?gid=0#gid=0")
 
 # 2. PEGA TU LINK AQUÍ
 # Recuerda: La hoja debe estar en "Cualquier persona con el enlace" y "EDITOR"
