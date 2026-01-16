@@ -6,7 +6,7 @@ from streamlit_gsheets import GSheetsConnection
 # Configuración de la página
 st.set_page_config(page_title="Registro de Producción", layout="centered")
 
-st.title("📝 Registro en la Nube")
+st.title("📝 Registro de producción")
 
 # --- CONEXIÓN ---
 # Pega aquí el link de tu hoja de Google
@@ -25,7 +25,7 @@ with st.form("registro"):
 if enviar:
     if not producto:
         st.warning("⚠️ Escribe un producto.")
-    elif URL_HOJA == "TU_LINK_DE_GOOGLE_SHEETS_AQUI":
+    elif URL_HOJA == "https://docs.google.com/spreadsheets/d/1GwUdPBKicLHyN_FB9KcgT5FKOskP6yGRtVR9tCh_PVQ/edit?gid=0#gid=0":
         st.error("❌ Falta pegar el link de Google Sheets en el código.")
     else:
         # Fila nueva
